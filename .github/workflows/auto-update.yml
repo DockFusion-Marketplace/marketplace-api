@@ -3,7 +3,7 @@ name: Auto Update Submodules
 on:
   schedule:
     - cron: '0 0 * * *' # every day at midnight UTC
-  workflow_dispatch: # allows manual triggering
+  workflow_dispatch:
 
 jobs:
   update-submodules:
@@ -14,41 +14,78 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: true
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update submodules
+      - name: Pull latest submodules
         run: |
           git submodule update --remote --merge
-          git add .
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git commit -m "Auto update submodules" || echo "No changes"
-          git push
 
-      - name: Generate data.json
+      - name: Fetch releases for each submodule
+        id: fetch_releases
         run: |
-          echo '{' > data.json
-          echo '"updated": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"' >> data.json
-          echo '}' >> data.json
+          echo "Fetching releases..."
+          RELEASES_CHANGED=false
+          REPO_DATA=""
+          for submodule in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }'); do
+            echo "Fetching releases for $submodule"
+            # Get the latest tag or release using GitHub API
+            API_URL="https://api.github.com/repos/DockFusion-Marketplace/$submodule/releases"
+            RESPONSE=$(curl -s $API_URL)
+            TAGS=$(echo "$RESPONSE" | jq '.[].tag_name' | sed 's/"//g')
+            LAST_RELEASE=$(echo "$TAGS" | head -n 1)
+            
+            # Check if the release has changed
+            CURRENT_RELEASE_FILE="releases/$submodule-release.txt"
+            if [[ -f "$CURRENT_RELEASE_FILE" ]]; then
+              LAST_KNOWN_RELEASE=$(cat "$CURRENT_RELEASE_FILE")
+              if [[ "$LAST_RELEASE" != "$LAST_KNOWN_RELEASE" ]]; then
+                RELEASES_CHANGED=true
+                echo "$submodule release changed to $LAST_RELEASE"
+              fi
+            else
+              RELEASES_CHANGED=true
+              echo "$submodule first release is $LAST_RELEASE"
+            fi
 
-      - name: Commit updated data.json
-        run: |
-          git add data.json
-          git commit -m "Updated data.json" || echo "No changes"
-          git push
+            # Save the releases info into the JSON structure
+            REPO_DATA+="{\"repo\": \"$submodule\", \"releases\": [$TAGS], \"last_release\": \"$LAST_RELEASE\"},"
+            echo "$LAST_RELEASE" > "$CURRENT_RELEASE_FILE"
+          done
+          
+          # Remove trailing comma from JSON
+          REPO_DATA=$(echo $REPO_DATA | sed 's/,$//')
 
-      - name: Create tag
+          # Save the JSON data to file
+          echo "{\"submodules\": [$REPO_DATA]}" > submodule_releases.json
+          echo "RELEASES_CHANGED=$RELEASES_CHANGED" >> $GITHUB_ENV
+
+      - name: Exit if no releases changed
+        if: env.RELEASES_CHANGED != 'true'
+        run: echo "No changes in submodule releases. Skipping release." && exit 0
+
+      - name: Create new tag
         run: |
           TAG=release-$(date +%Y%m%d%H%M%S)
           git tag "$TAG"
           git push origin "$TAG"
           echo "TAG_NAME=$TAG" >> $GITHUB_ENV
-          
+
+      - name: Commit submodule updates and new release information
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add submodule_releases.json
+          git commit -m "Updated submodules and created release tag ${{ env.TAG_NAME }}"
+          git push
+
       - name: Create a new release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: "Release ${{ env.TAG_NAME }}"
-          body: "Auto release after submodule updates"
+          body: |
+            Submodule updates included in this release:
+            ${{ steps.current-shas.outputs.sha_list }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
