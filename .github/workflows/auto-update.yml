@@ -37,11 +37,18 @@ jobs:
           git commit -m "Updated data.json" || echo "No changes"
           git push
 
+      - name: Create tag
+        run: |
+          TAG=release-$(date +%Y%m%d%H%M%S)
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "TAG_NAME=$TAG" >> $GITHUB_ENV
+          
       - name: Create a new release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: release-$(date +%Y%m%d%H%M%S)
-          name: "Release $(date)"
+          tag_name: ${{ env.TAG_NAME }}
+          name: "Release ${{ env.TAG_NAME }}"
           body: "Auto release after submodule updates"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
