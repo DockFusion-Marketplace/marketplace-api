@@ -111,3 +111,5 @@ jobs:
           asset_path: ./submodule_releases.json
           asset_name: submodule_releases.json
           asset_content_type: application/json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
