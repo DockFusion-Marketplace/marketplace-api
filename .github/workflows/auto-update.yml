@@ -22,23 +22,23 @@ jobs:
           git submodule update --remote --merge
 
       - name: Fetch releases for each submodule
-        id: fetch_releases
         run: |
           echo "Fetching releases..."
           RELEASES_CHANGED=false
           REPO_DATA=""
-          
+
           # Create releases directory if it doesn't exist
           mkdir -p releases
 
+          # Loop through all submodules
           for submodule in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }'); do
             # Remove the 'marketplace/' prefix from the submodule name
             submodule_name=$(echo "$submodule" | sed 's/^marketplace\///')
 
             echo "Fetching releases for $submodule_name"
-            # Get the latest tag or release using GitHub API
+            # Get the latest tag or release using GitHub API with authentication
             API_URL="https://api.github.com/repos/DockFusion-Marketplace/$submodule_name/releases"
-            RESPONSE=$(curl -s $API_URL)
+            RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" $API_URL)
             TAGS=$(echo "$RESPONSE" | jq '[.[].tag_name]')
             LAST_RELEASE=$(echo "$TAGS" | jq -r '.[0]')
             
