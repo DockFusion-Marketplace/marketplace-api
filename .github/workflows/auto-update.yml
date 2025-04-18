@@ -68,10 +68,11 @@ jobs:
           echo "RELEASES_CHANGED=$RELEASES_CHANGED" >> $GITHUB_ENV
 
       - name: Exit if no releases changed
-        if: env.RELEASES_CHANGED != 'true'
+        if: env.RELEASES_CHANGED == 'false'
         run: echo "No changes in submodule releases. Skipping release." && exit 0
 
       - name: Create new tag
+        if: env.RELEASES_CHANGED == 'true'
         run: |
           TAG=release-$(date +%Y%m%d%H%M%S)
           git tag "$TAG"
@@ -79,6 +80,7 @@ jobs:
           echo "TAG_NAME=$TAG" >> $GITHUB_ENV
 
       - name: Commit submodule updates and new release information
+        if: env.RELEASES_CHANGED == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
@@ -87,6 +89,7 @@ jobs:
           git push
 
       - name: Create a new release
+        if: env.RELEASES_CHANGED == 'true'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG_NAME }}
