@@ -39,8 +39,8 @@ jobs:
             # Get the latest tag or release using GitHub API
             API_URL="https://api.github.com/repos/DockFusion-Marketplace/$submodule_name/releases"
             RESPONSE=$(curl -s $API_URL)
-            TAGS=$(echo "$RESPONSE" | jq '.[].tag_name' | sed 's/"//g')
-            LAST_RELEASE=$(echo "$TAGS" | head -n 1)
+            TAGS=$(echo "$RESPONSE" | jq '[.[].tag_name]')
+            LAST_RELEASE=$(echo "$TAGS" | jq -r '.[0]')
             
             # Check if the release has changed
             CURRENT_RELEASE_FILE="releases/$submodule_name-release.txt"
@@ -56,7 +56,7 @@ jobs:
             fi
 
             # Save the releases info into the JSON structure
-            REPO_DATA+="{\"repo\": \"$submodule_name\", \"releases\": [$TAGS], \"last_release\": \"$LAST_RELEASE\"},"
+            REPO_DATA+="{\"repo\": \"$submodule_name\", \"releases\": $TAGS, \"last_release\": \"$LAST_RELEASE\"},"
             echo "$LAST_RELEASE" > "$CURRENT_RELEASE_FILE"
           done
           
@@ -82,7 +82,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add submodule_releases.json
+          git add .
           git commit -m "Updated submodules and created release tag ${{ env.TAG_NAME }}"
           git push
 
