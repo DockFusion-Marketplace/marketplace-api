@@ -1,0 +1,27 @@
+[submodule "marketplace/laravel"]
+	path = marketplace/laravel
+	url = https://github.com/DockFusion-Marketplace/laravel.git
+[submodule "marketplace/mailhog"]
+	path = marketplace/mailhog
+	url = https://github.com/DockFusion-Marketplace/mailhog.git
+[submodule "marketplace/mysql"]
+	path = marketplace/mysql
+	url = https://github.com/DockFusion-Marketplace/mysql.git
+[submodule "marketplace/nodejs"]
+	path = marketplace/nodejs
+	url = https://github.com/DockFusion-Marketplace/nodejs.git
+[submodule "marketplace/postgre"]
+	path = marketplace/postgre
+	url = https://github.com/DockFusion-Marketplace/postgre.git
+[submodule "marketplace/mariadb"]
+	path = marketplace/mariadb
+	url = https://github.com/DockFusion-Marketplace/mariadb.git
+[submodule "marketplace/mongodb"]
+	path = marketplace/mongodb
+	url = https://github.com/DockFusion-Marketplace/mongodb.git
+[submodule "marketplace/wordpress"]
+	path = marketplace/wordpress
+	url = https://github.com/DockFusion-Marketplace/wordpress.git
+[submodule "marketplace/redis"]
+	path = marketplace/redis
+	url = https://github.com/DockFusion-Marketplace/redis.git
