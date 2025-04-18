@@ -28,28 +28,31 @@ jobs:
           RELEASES_CHANGED=false
           REPO_DATA=""
           for submodule in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }'); do
-            echo "Fetching releases for $submodule"
+            # Remove the 'marketplace/' prefix from the submodule name
+            submodule_name=$(echo "$submodule" | sed 's/^marketplace\///')
+
+            echo "Fetching releases for $submodule_name"
             # Get the latest tag or release using GitHub API
-            API_URL="https://api.github.com/repos/DockFusion-Marketplace/$submodule/releases"
+            API_URL="https://api.github.com/repos/DockFusion-Marketplace/$submodule_name/releases"
             RESPONSE=$(curl -s $API_URL)
             TAGS=$(echo "$RESPONSE" | jq '.[].tag_name' | sed 's/"//g')
             LAST_RELEASE=$(echo "$TAGS" | head -n 1)
             
             # Check if the release has changed
-            CURRENT_RELEASE_FILE="releases/$submodule-release.txt"
+            CURRENT_RELEASE_FILE="releases/$submodule_name-release.txt"
             if [[ -f "$CURRENT_RELEASE_FILE" ]]; then
               LAST_KNOWN_RELEASE=$(cat "$CURRENT_RELEASE_FILE")
               if [[ "$LAST_RELEASE" != "$LAST_KNOWN_RELEASE" ]]; then
                 RELEASES_CHANGED=true
-                echo "$submodule release changed to $LAST_RELEASE"
+                echo "$submodule_name release changed to $LAST_RELEASE"
               fi
             else
               RELEASES_CHANGED=true
-              echo "$submodule first release is $LAST_RELEASE"
+              echo "$submodule_name first release is $LAST_RELEASE"
             fi
 
             # Save the releases info into the JSON structure
-            REPO_DATA+="{\"repo\": \"$submodule\", \"releases\": [$TAGS], \"last_release\": \"$LAST_RELEASE\"},"
+            REPO_DATA+="{\"repo\": \"$submodule_name\", \"releases\": [$TAGS], \"last_release\": \"$LAST_RELEASE\"},"
             echo "$LAST_RELEASE" > "$CURRENT_RELEASE_FILE"
           done
           
