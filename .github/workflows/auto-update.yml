@@ -89,13 +89,25 @@ jobs:
           git push
 
       - name: Create a new release
-        if: env.RELEASES_CHANGED == 'true'
+        id: create_release
         uses: softprops/action-gh-release@v1
+        if: env.RELEASES_CHANGED == 'true'
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: "Release ${{ env.TAG_NAME }}"
           body: |
             Submodule updates included in this release:
             ${{ steps.current-shas.outputs.sha_list }}
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload submodule_releases.json to release
+        uses: actions/upload-release-asset@v1
+        if: env.RELEASES_CHANGED == 'true'
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./submodule_releases.json
+          asset_name: submodule_releases.json
+          asset_content_type: application/json
