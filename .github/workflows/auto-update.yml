@@ -27,6 +27,10 @@ jobs:
           echo "Fetching releases..."
           RELEASES_CHANGED=false
           REPO_DATA=""
+          
+          # Create releases directory if it doesn't exist
+          mkdir -p releases
+
           for submodule in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }'); do
             # Remove the 'marketplace/' prefix from the submodule name
             submodule_name=$(echo "$submodule" | sed 's/^marketplace\///')
