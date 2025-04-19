@@ -97,13 +97,6 @@ jobs:
           body: Automated release including submodule updates.
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload submodule_releases.json to release
-        uses: softprops/action-gh-release@v1
-        if: env.RELEASES_CHANGED == 'true'
-        with:
           files: |
             ./submodule_releases.json
         env:
